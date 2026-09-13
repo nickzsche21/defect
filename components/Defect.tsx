@@ -5,10 +5,13 @@ import { detectAndParse, parsePasted } from "@/lib/parse";
 import { extractConversationsJson } from "@/lib/zip";
 import { extract } from "@/lib/extract";
 import { demoExport } from "@/lib/demo";
-import type { Fact, Profile } from "@/lib/types";
+import { scan, type ScanResult } from "@/lib/scan";
+import type { Corpus, Fact, Profile } from "@/lib/types";
 import Output from "./Output";
+import Exposure from "./Exposure";
 
 type Stage = "idle" | "scan" | "done";
+type Mode = "exposure" | "context";
 type Group = "identity" | "stack" | "projects" | "orders" | "topics" | "formats" | "styleOrders";
 
 const nf = new Intl.NumberFormat("en-US");
@@ -21,6 +24,9 @@ export default function Defect() {
   const [note, setNote] = useState("");
   const [prog, setProg] = useState(0);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [exposure, setExposure] = useState<ScanResult | null>(null);
+  const [corpus, setCorpus] = useState<Corpus | null>(null);
+  const [mode, setMode] = useState<Mode>("exposure");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const run = useCallback(async (raw: string, isPaste = false) => {
@@ -28,12 +34,16 @@ export default function Defect() {
     setStage("scan");
     setProg(0);
     try {
-      const corpus = isPaste ? parsePasted(raw) : detectAndParse(raw);
-      setNote(`${nf.format(corpus.convs.length)} conversations from ${corpus.source}`);
+      const c = isPaste ? parsePasted(raw) : detectAndParse(raw);
+      setCorpus(c);
+      setNote(`${nf.format(c.convs.length)} conversations from ${c.source}`);
       // let the scanning state paint before the main loop starts
       await new Promise((r) => setTimeout(r, 60));
-      const p = await extract(corpus, (done, total) => setProg(Math.round((done / total) * 100)));
+      const p = await extract(c, (done, total) => setProg(Math.round((done / total) * 100)));
       setProfile(p);
+      const x = scan(c);
+      setExposure(x);
+      setMode(x.findings.length ? "exposure" : "context");
       setStage("done");
       setTimeout(() => document.getElementById("reveal")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (e) {
@@ -81,8 +91,9 @@ export default function Defect() {
         <p className="kicker">Own your context</p>
         <h1 className="logo">DEFECT</h1>
         <p className="tagline">
-          You have spent months teaching one model how you work. Switching to another means
-          starting from nothing. <strong>Drop your chat export in and take it all with you.</strong>
+          Your chat history is two things at once: everything you have taught a model about how you
+          work, and everything you should never have pasted into it.{" "}
+          <strong>Drop your export in and see both.</strong>
         </p>
         <div className="privacy"><i className="dot" /> Runs entirely in this tab. There is no server to upload to.</div>
       </header>
@@ -112,7 +123,7 @@ export default function Defect() {
               Try it with sample data
             </button>
             <button className="btn" onClick={paste}>Paste text instead</button>
-            {profile && <button className="btn" onClick={() => { setProfile(null); setStage("idle"); }}>Clear</button>}
+            {profile && <button className="btn" onClick={() => { setProfile(null); setExposure(null); setCorpus(null); setStage("idle"); }}>Clear</button>}
           </div>
           {err && <div className="err">{err}</div>}
         </>
@@ -125,7 +136,23 @@ export default function Defect() {
         </div>
       )}
 
-      {stage === "done" && profile && <Reveal p={profile} toggle={toggle} />}
+      {stage === "done" && profile && (
+        <>
+          <div className="modes">
+            <button className={`mode${mode === "exposure" ? " on" : ""}`} onClick={() => setMode("exposure")}>
+              Exposure
+              {exposure && exposure.findings.length > 0 && <span className="badge">{exposure.findings.length}</span>}
+            </button>
+            <button className={`mode${mode === "context" ? " on" : ""}`} onClick={() => setMode("context")}>
+              Portable context
+            </button>
+          </div>
+          <div id="reveal">
+            {mode === "exposure" && exposure && corpus && <Exposure r={exposure} corpus={corpus} />}
+            {mode === "context" && <Reveal p={profile} toggle={toggle} />}
+          </div>
+        </>
+      )}
 
       {stage === "idle" && !profile && <HowTo />}
 
@@ -138,6 +165,12 @@ export default function Defect() {
         <p>
           Extraction is heuristic. It finds the things you repeated across separate conversations, which is
           a decent proxy for the things you were tired of typing. Everything it finds is yours to delete before you copy it.
+        </p>
+        <p>
+          The exposure scan is pattern matching with validators — card numbers are Luhn-checked, generic
+          secrets are entropy-checked, and obvious placeholders are ignored. It will still miss things and
+          still flag the occasional false positive, so confirm before you rotate. It reads only messages
+          you typed, not the model&apos;s replies.
         </p>
         <p>
           Open source ·{" "}
@@ -154,7 +187,7 @@ function Reveal({ p, toggle }: { p: Profile; toggle: (g: Group, id: string) => v
   const targets = useMemo(() => p, [p]);
 
   return (
-    <div id="reveal">
+    <div>
       <section className="section">
         <h2 className="shead">What you have been carrying</h2>
         <div className="stats">

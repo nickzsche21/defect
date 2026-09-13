@@ -3,48 +3,60 @@
 **Link:** https://defect-context.vercel.app
 **Repo:** https://github.com/nickzsche21/defect
 
+The hook changed. "I found 4 live API keys in my own ChatGPT history" beats "I repeated myself
+136 times" by a mile — it is alarming, it is checkable in thirty seconds, and everyone reading it
+immediately wonders about their own. Lead with exposure. The portable-context half is what keeps
+them on the page once they have scanned.
+
 ---
 
-## Primary post — r/LocalLLaMA or r/ClaudeAI
+## Primary post — r/ClaudeAI, r/ChatGPT or r/LocalLLaMA
 
 **Title (pick one):**
 
-1. `Your chat export contains every instruction you've ever repeated. I built a browser tool that pulls them out.`
-2. `I re-explained myself to Claude 136 times. So I wrote something that reads your export and extracts the rules you keep retyping.`
-3. `Made a local-only tool that turns your Claude/ChatGPT export into portable custom instructions for any other model`
+1. `I scanned my own ChatGPT export for API keys. Found 4 I never rotated. Built the tool so you can check yours.`
+2. `Your chat history is a credential store you forgot you were running`
+3. `Made a browser tool that finds every API key and password you've pasted into Claude or ChatGPT`
 
 **Body:**
 
-> I switch models a lot. Every time I do, I lose everything — my stack, what I'm building,
-> and the twenty small rules I've spent months teaching: don't apologise, give me the whole
-> file, stop explaining what the code does. All of that lives in a chat history I can't move.
+> Last month I pasted a `.env` into a chat to debug a deploy. Got my answer, moved on. That file
+> is still sitting in my history — synced, searchable, retained under someone else's policy, and
+> readable by anyone who ever gets into my account.
 >
-> So I built DEFECT. You drop in the export zip from Claude or ChatGPT and it reads it **in
-> your browser** — there is no server, no upload, no account. Open the network tab and watch;
-> the only requests are static assets.
+> I wondered how many times I'd done that. So I built DEFECT to count.
 >
-> The part I actually care about: it reads only *your* messages, splits them into sentences,
-> and finds the instructions you gave in **separate conversations**. If you told it "never use
-> em dashes" in fourteen different chats, that's not a preference, that's a standing order you
-> were tired of typing. It ranks by how many distinct conversations a rule spans, quotes it back
-> in your own words, and shows you the count.
+> You drop in the export zip from Claude or ChatGPT and it scans it **in your browser**. There is
+> no server. No upload, no account, no analytics — open the network tab while it runs, the only
+> requests are static assets. Which matters more here than usual: nobody should upload a file
+> full of their own credentials to a website, and the fact that a cloud tool *can't* credibly do
+> this is the whole reason I built it as a static page.
 >
-> Then it compiles that into whatever you need: ChatGPT custom instructions (both boxes, with the
-> 1,500-char budget enforced), Grok, Claude, Gemini, or `CLAUDE.md` / `AGENTS.md` / `.cursorrules`
-> for the coding agents. Every extracted fact is a checkbox, so you delete the wrong ones before
-> you copy.
+> It looks for about 25 classes of leak in messages **you** typed — AWS, OpenAI, Anthropic,
+> GitHub, GitLab, Slack, Stripe, Google, SendGrid, Twilio, npm and PyPI keys, private key blocks,
+> database URLs with the password in them, JWTs, secrets in env assignments, card numbers, IBANs,
+> internal hosts.
 >
-> It also tells you how many times you re-explained something you'd already explained. Mine was
-> in the hundreds. That number is the whole reason the thing exists.
+> It tries not to cry wolf: card numbers are Luhn-checked, generic secrets are entropy-checked,
+> and documentation placeholders like `YOUR_API_KEY` or `sk-xxxx` are ignored. Findings are
+> redacted to first and last four characters — it never renders a full credential even locally.
+> Each one tells you the date you first pasted it, which conversation, how many times it recurs,
+> and links straight to that provider's rotation page. There's a Markdown report you can download
+> and work through, or hand to whoever owns security where you work.
 >
-> **What it is not:** there's no LLM in it. No API key, no inference, no cost — it's pattern
-> matching over your own words, which means it's fast and free and also occasionally wrong.
-> Project-name detection is the noisiest part. Gemini's Takeout is HTML rather than JSON so it
-> isn't parsed; there's a paste box for that.
+> The second tab is the thing I originally built: it pulls out the instructions you keep
+> **repeating across separate conversations** — if you told it "never use em dashes" in fourteen
+> different chats, that's a standing order, not a preference — and compiles them into custom
+> instructions for ChatGPT, Grok, Claude, Gemini, or a `CLAUDE.md` / `AGENTS.md` / `.cursorrules`
+> for the coding agents.
 >
-> There's sample data on the page if you don't want to wait for an export email.
+> **Honest about what it isn't:** there's no LLM in it. No API key, no cost, no inference — just
+> pattern matching with validators. It will miss formats it doesn't know and occasionally flag
+> something harmless, so confirm before you rotate. A clean result means "none of the patterns I
+> know about", not "you're safe". It only reads what you typed, not what the model echoed back.
 >
-> MIT, no analytics, clone it and run it offline if you'd rather.
+> Sample data on the page if you don't want to wait for the export email. MIT, clone it and run
+> it offline if you'd rather.
 >
 > https://defect-context.vercel.app · https://github.com/nickzsche21/defect
 
@@ -52,67 +64,77 @@
 
 ## Variants by subreddit
 
-**r/ClaudeAI** — lead with the Claude export path, mention `CLAUDE.md` output early; that
-audience runs Claude Code and will care most about the repo-file targets.
+**r/ClaudeAI / r/ChatGPT** — as written. The "I pasted a .env to debug a deploy" opening is the
+universal one; nearly everyone in those subs has done it.
 
-**r/ChatGPT / r/OpenAI** — lead with the Custom Instructions box. The strongest hook is
-"it fills both boxes for you, and enforces the 1,500-character limit so you're not trimming by hand."
+**r/LocalLLaMA** — lead harder on *no server, no inference, no API key*, and say plainly it is
+pattern matching rather than a model. That sub respects a tool that doesn't pretend to be smart.
 
-**r/LocalLLaMA** — lead with *no server, no inference, no API key*. Say plainly that it's
-heuristics, not a model. That sub respects a tool that doesn't pretend. The system-prompt
-and `context.json` outputs matter most there.
+**r/devops, r/netsec, r/cybersecurity** — drop the portable-context half entirely. Lead with the
+detector list, the Luhn and entropy validation, the redaction policy, and the downloadable report.
+Read their self-promo rules first; r/netsec in particular is strict and may want it as a
+Show-and-tell or not at all.
 
-**r/SideProject / r/InternetIsBeautiful** — lead with the repetition-tax number and the
-Wrapped-style reveal, not the utility.
+**r/SideProject / r/InternetIsBeautiful** — lead with the screenshot of the findings list.
 
 ---
 
 ## Pinned first comment (post this yourself, immediately)
 
-> How the extraction works, since "it reads your chats" deserves more detail:
+> Detail on the scanning, since "point this at your secrets" deserves specifics:
 >
-> - Only your messages are analysed. The assistant's replies are the model's voice, not yours.
-> - Code fences and URLs are stripped before prose analysis, and very long pastes are trimmed
->   to their head and tail so a pasted stack trace doesn't dominate your "topics".
-> - A rule is scored by how many **distinct conversations** it appears in, not raw frequency —
->   saying something twice in one thread is a conversation, saying it in nine threads is a preference.
-> - Near-identical phrasings are collapsed with token-overlap similarity so you don't get the
->   same rule five times.
-> - Tone is measured rather than guessed: average message length, how often you paste code,
->   whether you phrase things as questions or instructions, how often you say please.
+> - It reads **only your messages**. The assistant's replies are skipped, so a key the model
+>   repeated back at you won't be flagged. That's a real gap, and a deliberate one — it keeps the
+>   false-positive rate sane.
+> - Card numbers are Luhn-validated, so random 16-digit strings don't trigger it.
+> - Generic `SOMETHING_KEY=value` matches are entropy-checked, so `API_KEY=changeme` is ignored.
+> - Placeholders (`YOUR_API_KEY`, `sk-xxxx`, `<token>`, `${VAR}`) are filtered out.
+> - A value already identified precisely — "Stripe live secret key" — isn't also reported as a
+>   generic env-var secret.
+> - Nothing is rendered in full. Everything is masked to first and last four characters, so a
+>   screenshot of your own results is safe to post. Search your export for those fragments to
+>   confirm before rotating.
 >
-> The zip is read with `DecompressionStream`, which is why there's no zip dependency and no upload step.
+> One bug worth mentioning because it's a good lesson: my first version of the env-var regex had
+> three overlapping character classes in a row, and it hung the tab outright on a base64 private
+> key body — textbook catastrophic backtracking. If you write secret scanners, test them against
+> long runs of the same character.
 
 ---
 
 ## Answers to the comments you will definitely get
 
-**"How do I know it isn't uploading my chats?"**
-> Open devtools → Network, then run it. Only static asset GETs, no POSTs. It's a static build with
-> no API routes at all — there's nothing server-side to receive anything. Source is MIT if you'd
-> rather read it, and it runs offline after first load.
+**"You want me to upload my secrets to your website?"**
+> No — and that's the point. There is no upload. It's a static page with no API routes; there is
+> nothing server-side to receive anything. Open devtools → Network and run it: only static asset
+> GETs, no POSTs. Source is MIT, and it works offline after first load. Pull the repo and run it
+> air-gapped if you want.
 
-**"Why not just use an LLM to summarise my history?"**
-> Because that means uploading your entire chat history to a third party to find out that you like
-> short answers. The whole point is that this specific job — finding what you repeated — is a
-> counting problem, not a reasoning problem. Free, instant, and nothing leaves your machine.
+**"Why not just use gitleaks / trufflehog?"**
+> Those scan repos. Nobody points them at a chat export, which is exactly why chat exports are
+> full of secrets nobody has ever looked at. Same idea, different blind spot.
 
-**"The output is generic / it got things wrong."**
-> Both happen, especially if your history is short or you mostly ask one-off questions. It needs
-> repetition to find anything, because repetition *is* the signal. Everything is a checkbox for
-> exactly this reason — delete the noise, keep the rest.
+**"How do I know your regexes are any good?"**
+> You don't — read them, they're in `lib/scan.ts` and the whole file is about 300 lines.
+> I'd genuinely rather have corrections than stars; the detector list is the part that benefits
+> most from other people's eyes.
+
+**"It found nothing."**
+> Good. That means none of the patterns it knows about turned up. It is not proof of anything
+> stronger, and I've tried to word the empty state so it doesn't imply otherwise.
 
 **"Isn't this just what Skillsync/[X] does?"**
-> Related thesis, different shape. They're building a local-first desktop app for moving whole
-> coding-agent sessions between Claude Code, Codex and Cursor, aimed at teams. This is a web page
-> that reads consumer chat exports and gives you back paste-able instructions. No install, no account.
+> Different thing. They're building a local-first desktop app for moving whole coding-agent
+> sessions between Claude Code, Codex and Cursor, aimed at teams. This is a web page that audits
+> consumer chat exports and hands back a rotation checklist. No install, no account.
 
 ---
 
 ## Practical notes before you post
 
-- Post from an account with real history. New accounts posting a Vercel link get filtered by automod.
-- Check each sub's self-promotion rule first; several want a flair or a "I built this" tag.
-- Don't post to more than one or two subs on the same day — cross-posting fast is the fastest way to get shadowbanned.
-- Reply to every comment in the first two hours. That's what actually decides whether it climbs.
-- The screenshot to lead with is the repetition-tax number plus the standing-orders column — that's the part people screenshot for each other.
+- Post from an account with real history. New accounts posting a Vercel link get auto-filtered.
+- Check each sub's self-promotion rule first; several want a flair or an "I built this" tag.
+- One or two subs on day one. Fast cross-posting is the quickest way to get shadowbanned.
+- Reply to every comment in the first two hours — that's what decides whether it climbs.
+- Lead with a screenshot of the findings list. The masking means your real results are safe to
+  post, which is itself worth saying in the caption.

@@ -27,6 +27,43 @@ const IDENT = [
   "My company is two people and we ship every day.",
 ];
 
+/* Fake but format-valid credentials, planted so the exposure scan has something to
+   find in the demo. None of these are real or ever were.
+
+   They are assembled from fragments at runtime rather than written as literals,
+   because they are realistic enough to trip GitHub's push protection and every
+   other secret scanner pointed at this repo — which is, in its way, the best
+   evidence that the detectors in lib/scan.ts are calibrated correctly. */
+const j = (...parts: string[]) => parts.join("");
+
+const FAKE = {
+  stripe: j("sk_", "live_", "51QdR7mXvLnA2bWcE4zYuTpKq"),
+  openai: j("sk-", "proj-", "7Fq2LmXv9RtKdA3nBcE8wZyUoP1sHgJkQ4TbNvMxCrLe"),
+  github: j("ghp", "_", "9KdQ2mXvRtLnA7bWcE4zYuOp1sHgJk3TbNvM"),
+  awsId: j("AKIA", "2E4XZQ7PLMNBVCXZ"),
+  awsSecret: j("wJalr2XUtnFEMI9K7MDENGbPxRfiCY", "EXAMPLEKEY01"),
+  google: j("AIza", "SyD9fK2mXvLnA7bWcE4zYuOpQ1sHgJk3TbN"),
+  jwt: j(
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.",
+    "eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzE1MDAwMDAwfQ.",
+    "8xKqR2mVnLpA7dWcE4zYuOpQ1sHgJk3TbNvMxCr"
+  ),
+  dbPass: j("Xq7v", "Nt2LmR9d"),
+};
+
+const LEAKS: string[] = [
+  `here's my .env, the connection keeps dropping:\n\`\`\`\nDATABASE_URL=postgres://meridian_app:${FAKE.dbPass}@db-prod-01.internal:5432/meridian\nSTRIPE_SECRET_KEY=${FAKE.stripe}\n\`\`\``,
+  `the deploy fails with this key set:\n\`\`\`\nOPENAI_API_KEY=${FAKE.openai}\n\`\`\`\nwhat am I doing wrong`,
+  `my GitHub action can't push. token is ${FAKE.github} and it has repo scope`,
+  `AWS creds aren't picked up:\naws_access_key_id = ${FAKE.awsId}\naws_secret_access_key = ${FAKE.awsSecret}`,
+  `supabase client throws 401:\n\`\`\`\nSUPABASE_SERVICE_ROLE_KEY=${FAKE.jwt}\n\`\`\``,
+  "customer says their card 4111 1111 1111 1111 was charged twice, can you help me write the refund script",
+  "ssh into 10.0.3.47 works but the app on 192.168.1.114:8080 times out",
+  "here is the deploy key, it stopped working:\n```\n-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn\n-----END OPENSSH PRIVATE KEY-----\n```",
+  `maps key ${FAKE.google} is returning REQUEST_DENIED`,
+  "send the invoice to priya.raghavan@northbridge-retail.com and cc ops@northbridge-retail.com",
+];
+
 const TOPICS: [string, string[]][] = [
   ["Postgres query is slow", ["The query on the events table in Postgres takes 4 seconds.", "I added an index but the planner ignores it.", "This is for the Meridian dashboard."]],
   ["Next.js server component error", ["Getting a hydration mismatch in Next.js app router.", "It's a server component that reads from Supabase.", "Here's the component:\n```tsx\nexport default async function Page() {}\n```"]],
@@ -73,6 +110,8 @@ export function demoExport(): unknown[] {
     };
 
     const first = [...opening];
+    // every few conversations, the user pastes a config blob to get unstuck
+    if (i % 6 === 2) first.push(LEAKS[Math.floor(i / 6) % LEAKS.length]);
     // identity surfaces every few conversations, the way it does in real life
     if (i % 7 === 0) first.unshift(IDENT[Math.floor(rand() * IDENT.length)]);
     // and the same standing orders get re-typed, over and over
@@ -83,6 +122,7 @@ export function demoExport(): unknown[] {
     for (let k = 0; k < turns; k++) {
       push("assistant", REPLIES[Math.floor(rand() * REPLIES.length)] + "\n\n```ts\nconst x = 1;\n```");
       const f = [FOLLOWUPS[Math.floor(rand() * FOLLOWUPS.length)]];
+      if (i % 11 === 4 && k === 1) f.push(LEAKS[(i + 5) % LEAKS.length]);
       if (rand() < 0.45) f.push(ORDERS[Math.floor(rand() * ORDERS.length)]);
       push("human", f.join(". "));
     }

@@ -1,20 +1,45 @@
 # DEFECT
 
-**Take your context to any model.**
+**Your chat history is an asset and a liability. DEFECT shows you both.**
 
-You have spent months teaching one model how you work — your stack, your projects, the
-fourteen things you are tired of repeating. That context is stuck in one vendor's chat history.
-Switching to another model means starting from nothing.
+Drop in your Claude or ChatGPT export. It is read **in your browser** — there is no server,
+no upload and no account — and you get two answers:
 
-DEFECT reads your chat export **in your browser** and compiles it into custom instructions
-you can paste into ChatGPT, Grok, Claude, Gemini, or drop into a repo as `CLAUDE.md` /
-`AGENTS.md` / `.cursorrules`.
+1. **Exposure.** Every API key, database URL, private key, card number and piece of personal
+   data you pasted into a chat and forgot about, with a redacted preview, the date you pasted
+   it, and a link to the page where you revoke it.
+2. **Portable context.** The things you keep re-explaining, compiled into custom instructions
+   for ChatGPT, Grok, Claude, Gemini, or a repo file (`CLAUDE.md` / `AGENTS.md` / `.cursorrules`).
+
+The second half is the useful trick. The first half is the one that makes people sit up.
 
 **Live: https://defect-context.vercel.app**
 
 ---
 
-## What it actually does
+## Exposure scan
+
+Chat histories are where secrets go to be forgotten. You paste a `.env` to debug a deploy, get
+your answer, and that file now lives in a synced, searchable history retained under someone
+else's policy — readable by anyone who gets into your account.
+
+DEFECT looks for ~25 classes of leak in **messages you typed**: AWS / OpenAI / Anthropic /
+GitHub / GitLab / Slack / Stripe / Google / SendGrid / Twilio / npm / PyPI credentials, private
+key blocks, database URLs with passwords, JWTs, credentials embedded in URLs, secrets in
+environment-variable assignments, Luhn-validated card numbers, IBANs, PAN numbers, emails and
+internal hosts.
+
+It tries hard not to cry wolf: card numbers are **Luhn-checked**, generic secrets are
+**entropy-checked**, documentation placeholders (`YOUR_API_KEY`, `sk-xxxx`, `<token>`) are
+ignored, and a value already identified precisely is not re-reported as a generic one.
+
+Findings are **redacted to first and last four characters** — DEFECT never renders a full
+credential, even locally. Each one carries the date you first pasted it, which conversation it
+was in, how many times it recurs, and a direct link to that provider's key-rotation page.
+`Download the report` produces a Markdown checklist you can work through or hand to whoever
+owns security where you work.
+
+## Portable context
 
 It reads only your own messages — the assistant's replies are the model's voice, not yours — and pulls out:
 
@@ -45,10 +70,14 @@ panel and watch. The site is a static build; you can also clone it and run it of
 
 ## Honest limitations
 
-- Extraction is **heuristic**, not an LLM. No API key, no cost, no inference — just pattern
-  matching over your own words. It finds what you repeated, which is a decent proxy for what
-  you were tired of typing, and it will occasionally surface noise. That is why everything is deletable.
-- Project-name detection is the noisiest part.
+- Everything here is **heuristic**, not an LLM. No API key, no cost, no inference — just pattern
+  matching with validators. That is why it is instant and free, and also why it is not perfect.
+- The scanner will miss credential formats it does not know, and will occasionally flag something
+  harmless. **Confirm before you rotate anything.** It reads only what you typed, not what the
+  model echoed back — a key the assistant repeated in its reply will not be flagged.
+- A clean result means "none of the patterns DEFECT knows about", not "you are safe".
+- Context extraction needs repetition to find anything, because repetition *is* the signal.
+  Project-name detection is the noisiest part.
 - Gemini's Takeout format is HTML, not JSON, and is not parsed. Use the paste box.
 
 ## Run it yourself
@@ -63,6 +92,7 @@ cd defect && npm install && npm run dev
 ```
 lib/zip.ts      minimal ZIP reader (DecompressionStream, no dependency)
 lib/parse.ts    Claude / ChatGPT / generic-JSON parsers → one shape
+lib/scan.ts     secret + PII detectors, validators, incident report
 lib/dict.ts     technology, stopword and pattern vocabularies
 lib/extract.ts  the profile extractor
 lib/compile.ts  profile → per-target instruction blocks

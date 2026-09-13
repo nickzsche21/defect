@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const title = "DEFECT — take your context to any model";
+const title = "DEFECT — audit and port your AI chat history";
 const description =
-  "Drop in your Claude or ChatGPT export. DEFECT reads it in your browser and compiles the things you keep re-explaining into custom instructions for any other model. Nothing is uploaded.";
+  "Drop in your Claude or ChatGPT export. DEFECT finds the API keys and personal data you pasted into it, and compiles what you keep re-explaining into custom instructions for any other model. Runs entirely in your browser — nothing is uploaded.";
 
 export const metadata: Metadata = {
   title,
