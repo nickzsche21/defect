@@ -137,8 +137,8 @@ a { color: inherit; text-decoration: none; }
   margin-top: 2px; display: grid; place-items: center; font-size: 10px; color: var(--bg);
 }
 .row.on .box { background: var(--amber); border-color: var(--amber); }
-.row .t { font-size: 13.5px; line-height: 1.5; color: var(--text); }
-.row .m { font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-top: 3px; }
+.row .t { display: block; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+.row .m { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-top: 4px; }
 .row.off .t { color: var(--faint); }
 
 .bars { display: flex; flex-direction: column; gap: 11px; }

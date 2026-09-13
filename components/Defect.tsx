@@ -281,7 +281,7 @@ function Row({ f, meta, onClick }: { f: Fact; meta: string; onClick: () => void 
   return (
     <div className={`row ${f.on ? "on" : "off"}`} onClick={onClick} title={f.evidence || ""}>
       <span className="box">{f.on ? "✓" : ""}</span>
-      <span>
+      <span style={{ minWidth: 0 }}>
         <span className="t">{f.text}</span>
         <span className="m">{meta}</span>
       </span>
