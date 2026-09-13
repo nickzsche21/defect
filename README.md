@@ -10,7 +10,7 @@ DEFECT reads your chat export **in your browser** and compiles it into custom in
 you can paste into ChatGPT, Grok, Claude, Gemini, or drop into a repo as `CLAUDE.md` /
 `AGENTS.md` / `.cursorrules`.
 
-**Live: https://defect.vercel.app**
+**Live: https://defect-context.vercel.app**
 
 ---
 

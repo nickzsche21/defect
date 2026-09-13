@@ -191,7 +191,7 @@ export function compile(p: Profile): Target[] {
         name: "context.json",
         text: JSON.stringify(
           {
-            $schema: "https://defect.vercel.app/context.schema.json",
+            $schema: "https://defect-context.vercel.app/context.schema.json",
             generatedBy: "DEFECT",
             generatedAt: new Date().toISOString(),
             derivedFrom: { source: p.source, conversations: p.convCount, messages: p.msgCount },
